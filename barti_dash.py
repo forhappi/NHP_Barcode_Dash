@@ -159,3 +159,4 @@ def update_scatter2 (monkey_dropdown, sample_dropdown, scatter):
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True)
+#updated
