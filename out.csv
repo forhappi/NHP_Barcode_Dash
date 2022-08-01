@@ -1,0 +1,13 @@
+sample,25ATAGCCC,25CCGAGGT,25CTGGTGT,25CTTGTTC,25GCTTCGT,25GCTTCTA,25TTTCGGG,26ACGGCAT,26ATGCGGT,27GCTCTCG
+Ant_pretrach_LN,,,,,,,,0.07,0.06,0.85
+LLL_gr_1,0.13,0.87,,,,,,,,
+LLL_gr_11,,,,,,1.0,,,,
+LLL_gr_12,,,,,,,0.99,,,
+LLL_gr_1_2,,,1.0,,,,,,,
+LLL_gr_3,,,,,0.99,,,,,
+LLL_gr_5,1.0,,,,,,,,,
+LLL_gr_7,,,,,1.0,,,,,
+LLL_gr_9,,,,,,,,1.0,,
+L_carinal_LN_gr_1,,,,,,,,,0.97,
+L_cran_HLN_gr_2,,,,,,0.14,0.17,,,0.66
+R_carinal_LN_gr_1,,,,0.99,,,,,,
