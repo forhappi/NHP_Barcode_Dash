@@ -24,19 +24,19 @@ df['sample'] = df['run'].map(reference_df.set_index('sample_number')['plot_name'
 df[['monkey']] = df[['monkey']].apply(pd.to_numeric).round(0).astype('Int64', copy=False)
 df['ratio'] = df['percent']/100
 
-df.head()
-
 df_pass = df.loc[df['call_pass_fail'] == True]
 
 monkey_list = ['All'] + list(pd.unique(df_pass['monkey']))
 sample_list = df_pass['sample'].unique().tolist()
+sample_list.sort()
+scatter_drop = df.columns[3:10]
 
 # make dash application
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
     html.Div([html.H1(children="Heatmap Analysis"),
-             #first dropdown
+             # first dropdown for heatmap
              html.Div([dcc.Dropdown(
                 id='monkey-dropdown',
                 options=[{'label': str(i), 'value': str(i)} for i in monkey_list],
@@ -44,22 +44,25 @@ app.layout = html.Div([
                 searchable=True,
                 placeholder='Select a monkey',
              ),
-            #heatmap figure
             html.Div(dcc.Graph(id='sucess-heatmap')),
              ])
               ]),
     html.Div([html.H1(children="Scatter Analysis"),
               html.Div([
+                  # second dropdown for mcount scatter
                   dcc.Dropdown(
                       id='sample-dropdown',
+                      # TODO: fix sample dropdown to show only samples for the selected monkey
                       options=[{'label': str(i), 'value': str(i)} for i in sample_list],
                       searchable=True,
                       placeholder='Select a sample',
                   ),
                   html.Div(dcc.Graph(id='sample-scatter')),
+                  # third dropdown for other scatter plots
                   dcc.Dropdown(
                       id='scatter2-dropdown',
-                      options=[{'label': str(i), 'value': str(i)} for i in df.columns],
+                      options=[{'label': str(i), 'value': str(i)} for i in scatter_drop],
+                      value='norm',
                       searchable=True,
                       placeholder='Select a plot',
                   ),
@@ -78,8 +81,9 @@ app.layout = html.Div([
 def update_heatmap (monkey_dropdown):
     if (monkey_dropdown == 'All' or monkey_dropdown == 'None'):
         dfp = df_pass.pivot_table(index='monkey', columns='qbid', values='ratio')
-        dfp.to_csv('out.csv')
-        dfhm = pd.read_csv('out.csv')
+        # saves pivot table to a csv for easy exporting to Prism
+        dfp.to_csv(f'{monkey_dropdown}.csv')
+        dfhm = pd.read_csv(f'{monkey_dropdown}.csv')
         fig = px.imshow(
             dfhm,
             labels=dict(x="QBID", y="Monkey"),
@@ -88,8 +92,9 @@ def update_heatmap (monkey_dropdown):
     else:
         df_m = df_pass.loc[df_pass['monkey'] == int(monkey_dropdown)]
         dfp = df_m.pivot_table(index='sample', columns='qbid', values='ratio')
-        dfp.to_csv('out.csv')
-        dfhm = pd.read_csv('out.csv')
+        # saves pivot table to a csv for easy exporting to Prism
+        dfp.to_csv(f'{monkey_dropdown}.csv')
+        dfhm = pd.read_csv(f'{monkey_dropdown}.csv')
         fig = px.imshow(dfhm,
                         labels=dict(x="QBID", y="Sample", color = "Ratio"),
                         y=dfhm['sample'],
@@ -102,23 +107,28 @@ def update_heatmap (monkey_dropdown):
      Input(component_id="sample-dropdown", component_property="value")]
 )
 def update_scatter (monkey_dropdown, sample_dropdown):
-    df_m = df.loc[df['monkey'] == int(monkey_dropdown)]
-    df_m2 = df_m.loc[df_m['sample'] == sample_dropdown]
-    fig = px.scatter(
-        df_m2,
-        x="index",
-        y='counts',
-        title='mcounts',
-        hover_name='index',
-        hover_data=[
-            'monkey',
-            'sample',
-            'index',
-            'qbid',
-            'counts'
-        ]
-    )
+    if (monkey_dropdown == 'All' or monkey_dropdown == 'None'):
+        fig = px.scatter()
+    else:
+        df_m = df.loc[df['monkey'] == int(monkey_dropdown)]
+        df_m2 = df_m.loc[df_m['sample'] == sample_dropdown]
+        fig = px.scatter(
+            df_m2,
+            x="index",
+            y='counts',
+            title='mcounts',
+            hover_name='index',
+            hover_data=[
+                'monkey',
+                'sample',
+                'index',
+                'qbid',
+                'counts'
+            ]
+        )
+    current_monkey = monkey_dropdown
     return fig
+
 
 @app.callback(
     Output(component_id='sample2-scatter', component_property='figure'),
@@ -127,21 +137,23 @@ def update_scatter (monkey_dropdown, sample_dropdown):
      Input(component_id="scatter2-dropdown", component_property="value")]
 )
 def update_scatter2 (monkey_dropdown, sample_dropdown, scatter):
-    df_m = df.loc[df['monkey'] == int(monkey_dropdown)]
-    df_m2 = df_m.loc[df_m['sample'] == sample_dropdown]
-    print(df_m.head())
-    fig = px.scatter(
-        df_m2,
-        x="index",
-        y=scatter,
-        title=scatter,
-        hover_data=[
-            'monkey',
-            'sample',
-            'index',
-            'counts'
-        ]
-    )
+    if (monkey_dropdown == 'All' or monkey_dropdown == 'None'):
+        fig = px.scatter()
+    else:
+        df_m = df.loc[df['monkey'] == int(monkey_dropdown)]
+        df_m2 = df_m.loc[df_m['sample'] == sample_dropdown]
+        fig = px.scatter(
+            df_m2,
+            x="index",
+            y=scatter,
+            title=scatter,
+            hover_data=[
+                'monkey',
+                'sample',
+                'index',
+                'counts'
+            ]
+        )
     return fig
 
 # Run the app
