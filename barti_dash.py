@@ -1,4 +1,5 @@
 import dash
+import os
 #import numpy as np
 import pandas as pd
 from dash import dcc
@@ -7,8 +8,8 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 
 #read data into DF
-reference_df = pd.read_csv("Reference_sheet_IV_BCG.csv")
-df = pd.read_csv("Samples_threshold_data.csv")
+reference_df = pd.read_csv("input/Reference_sheet_IV_BCG.csv")
+df = pd.read_csv("input/Samples_threshold_data.csv")
 
 # remove extra characters from sample_number
 df['run'] = df['run'].map(lambda x: x.split("_")[0])
@@ -37,6 +38,7 @@ app = dash.Dash(__name__)
 app.layout = html.Div([
     html.Div([html.H1(children="Heatmap Analysis"),
              # first dropdown for heatmap
+              # TODO: remove sample column from individual monkey heatmaps
              html.Div([dcc.Dropdown(
                 id='monkey-dropdown',
                 options=[{'label': str(i), 'value': str(i)} for i in monkey_list],
@@ -53,6 +55,7 @@ app.layout = html.Div([
                   dcc.Dropdown(
                       id='sample-dropdown',
                       # TODO: fix sample dropdown to show only samples for the selected monkey
+                        # Try to select the monkey from sample list
                       options=[{'label': str(i), 'value': str(i)} for i in sample_list],
                       searchable=True,
                       placeholder='Select a sample',
@@ -82,23 +85,26 @@ def update_heatmap (monkey_dropdown):
     if (monkey_dropdown == 'All' or monkey_dropdown == 'None'):
         dfp = df_pass.pivot_table(index='monkey', columns='qbid', values='ratio')
         # saves pivot table to a csv for easy exporting to Prism
-        dfp.to_csv(f'{monkey_dropdown}.csv')
-        dfhm = pd.read_csv(f'{monkey_dropdown}.csv')
+        dfp.to_csv(f'output/{monkey_dropdown}.csv')
+        dfhm = pd.read_csv(f'output/{monkey_dropdown}.csv')
         fig = px.imshow(
             dfhm,
             labels=dict(x="QBID", y="Monkey"),
-            y=dfhm['monkey'])
+            y=dfhm['monkey'],
+            aspect='equal')
         fig.update_yaxes(type='category')
     else:
         df_m = df_pass.loc[df_pass['monkey'] == int(monkey_dropdown)]
         dfp = df_m.pivot_table(index='sample', columns='qbid', values='ratio')
         # saves pivot table to a csv for easy exporting to Prism
-        dfp.to_csv(f'{monkey_dropdown}.csv')
-        dfhm = pd.read_csv(f'{monkey_dropdown}.csv')
+        dfp.to_csv(f'output/{monkey_dropdown}.csv')
+        dfhm = pd.read_csv(f'output/{monkey_dropdown}.csv')
         fig = px.imshow(dfhm,
                         labels=dict(x="QBID", y="Sample", color = "Ratio"),
                         y=dfhm['sample'],
+                        aspect='equal'
                         )
+        fig.update_yaxes(showticklabels=True)
     return fig
 
 @app.callback(
